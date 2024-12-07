@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proximity File Sharing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="bg-gradient-to-r from-blue-500 to-blue-700 min-h-screen flex items-center justify-center">
+    <div class="w-full max-w-md p-6 bg-white rounded shadow-lg">
+        <h1 class="text-2xl font-bold text-center mb-4">Pair Devices</h1>
+        <p id="status" class="text-center text-gray-700 mb-6">Move your devices together to pair.</p>
+
+        <button id="pairBtn" class="w-full py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700">
+            Start Pairing
+        </button>
+
+        <div id="fileSection" class="hidden mt-6">
+            <label class="block text-gray-700 mb-2">Upload Files:</label>
+            <input type="file" id="fileInput" class="w-full mb-4">
+            <button id="shareBtn" class="w-full py-2 bg-green-600 text-white font-bold rounded hover:bg-green-700">
+                Share Files
+            </button>
+        </div>
+
+        <div id="downloadSection" class="hidden mt-6">
+            <button id="downloadBtn" class="w-full py-2 bg-purple-600 text-white font-bold rounded hover:bg-purple-700">
+                Download Files
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const socket = io.connect('http://localhost:5000');
+        const pairBtn = document.getElementById('pairBtn');
+        const fileSection = document.getElementById('fileSection');
+        const shareBtn = document.getElementById('shareBtn');
+        const downloadSection = document.getElementById('downloadSection');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const status = document.getElementById('status');
+        const fileInput = document.getElementById('fileInput');
+
+        let motionMatched = false;
+
+        // Device motion detection
+        function monitorMotion() {
+            window.addEventListener('devicemotion', (event) => {
+                const acceleration = event.accelerationIncludingGravity;
+                if (acceleration.x > 9 && acceleration.x < 11 && acceleration.y > 9 && acceleration.y < 11) {
+                    motionMatched = true;
+                    socket.emit('pair', { device_id: Math.random().toString(36).substr(2, 9) });
+                    status.textContent = 'Devices paired successfully!';
+                    fileSection.classList.remove('hidden');
+                }
+            });
+        }
+
+        pairBtn.addEventListener('click', () => {
+            status.textContent = 'Move the devices close together to pair...';
+            monitorMotion();
+        });
+
+        // Share files
+        shareBtn.addEventListener('click', () => {
+            const files = fileInput.files;
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('file', files[i]);
+            }
+            fetch('/upload', {
+                method: 'POST',
+                body: formData,
+            }).then(() => {
+                alert('Files shared successfully!');
+                downloadSection.classList.remove('hidden');
+            });
+        });
+
+        // Download files
+        downloadBtn.addEventListener('click', () => {
+            window.location.href = '/download';
+        });
+    </script>
+</body>
+</html>
