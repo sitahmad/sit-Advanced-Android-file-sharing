@@ -47,7 +47,7 @@ def upload_file():
 def download_file():
     # Compress all files in uploads folder into a single zip
     from zipfile import ZipFile
-    zip_filename = 'shared_files.zip'
+    zip_filename = 'sit_shared_files.zip'
     with ZipFile(zip_filename, 'w') as zipf:
         for root, _, files in os.walk(app.config['UPLOAD_FOLDER']):
             for file in files:
